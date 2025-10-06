@@ -179,14 +179,83 @@ cd dev
 terraform destroy -var-file="terraform.tfvars" -auto-approve
 
 # QA
-cd qa
+cd ../qa
 terraform destroy -var-file="terraform.tfvars" -auto-approve
 
 # Prod
-cd prod
+cd ../prod
 terraform destroy -var-file="terraform.tfvars" -auto-approve
 ```
 
 ---
 
-✅ **This setup is fully modular, environment-specific, and maintains separate state files per environment.**
+## ☁️ Optional: Store State in S3 Bucket
+
+If you want to store the Terraform state file in **S3** instead of local folder:
+
+### 1️⃣ Create S3 Bucket
+
+```bash
+aws s3 mb s3://my-terraform-states --region us-east-1
+aws s3api put-bucket-versioning --bucket my-terraform-states --versioning-configuration Status=Enabled
+```
+
+### 2️⃣ Create backend.tf in each environment folder
+
+#### dev/backend.tf
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket  = "my-terraform-states"
+    key     = "dev/terraform.tfstate"
+    region  = "us-east-1"
+    encrypt = true
+  }
+}
+```
+
+#### qa/backend.tf
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket  = "my-terraform-states"
+    key     = "qa/terraform.tfstate"
+    region  = "us-east-1"
+    encrypt = true
+  }
+}
+```
+
+#### prod/backend.tf
+
+```hcl
+terraform {
+  backend "s3" {
+    bucket  = "my-terraform-states"
+    key     = "prod/terraform.tfstate"
+    region  = "us-east-1"
+    encrypt = true
+  }
+}
+```
+
+### 3️⃣ Initialize Terraform with S3 Backend
+
+```bash
+cd dev
+terraform init -reconfigure ../modules/ec2-instance
+
+cd ../qa
+terraform init -reconfigure ../modules/ec2-instance
+
+cd ../prod
+terraform init -reconfigure ../modules/ec2-instance
+```
+
+* The state file will now be stored in S3: `s3://my-terraform-states/dev/terraform.tfstate`, etc.
+
+---
+
+✅ **This setup is fully modular, environment-specific, and can optionally store state files in S3.**
