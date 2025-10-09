@@ -13,11 +13,15 @@ Terraform-Modules/
 │       ├── main.tf
 │       ├── variables.tf
 ├── dev/
-│   └── terraform.tfvars
+│   ├── main.tf
+│   └── backend.tf
 ├── qa/
-│   └── terraform.tfvars
+│   ├── main.tf
+│   └── backend.tf
 └── prod/
-    └── terraform.tfvars
+    ├── main.tf
+    └── backend.tf
+
 ```
 
 * **modules/ec2-instance/** → Contains reusable EC2 module (`main.tf`, `variables.tf`)
@@ -100,40 +104,64 @@ variable "env_tag" {
 
 ## 🌱 Environment-Specific terraform.tfvars
 
-### dev/terraform.tfvars
+### dev/main.tf
 
 ```hcl
-region             = "us-east-1"
-ami_id             = "ami-0c55b159cbfafe1f0"
-instance_type      = "t2.micro"
-key_name           = "my-keypair-dev"
-security_group_id  = "sg-0dev1234567890"
-subnet_id          = "subnet-0dev1234567890"
-env_tag            = "dev"
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "ec2_instance" {
+  source = "../modules/ec2-instance"
+
+  ami_id             = "ami-0c55b159cbfafe1f0"
+  instance_type      = "t2.micro"
+  key_name           = "my-keypair-dev"
+  security_group_id  = "sg-0dev1234567890"
+  subnet_id          = "subnet-0dev1234567890"
+  env_tag            = "dev"
+  region             = "us-east-1"
+}
 ```
 
-### qa/terraform.tfvars
+### qa/main.tf
 
 ```hcl
-region             = "us-east-1"
-ami_id             = "ami-0c55b159cbfafe1f0"
-instance_type      = "t2.micro"
-key_name           = "my-keypair-qa"
-security_group_id  = "sg-0qa1234567890"
-subnet_id          = "subnet-0qa1234567890"
-env_tag            = "qa"
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "ec2_instance" {
+  source = "../modules/ec2-instance"
+
+  ami_id             = "ami-0c55b159cbfafe1f0"
+  instance_type      = "t2.micro"
+  key_name           = "my-keypair-qa"
+  security_group_id  = "sg-0qa1234567890"
+  subnet_id          = "subnet-0qa1234567890"
+  env_tag            = "qa"
+  region             = "us-east-1"
+}
 ```
 
-### prod/terraform.tfvars
+### prod/main.tf
 
 ```hcl
-region             = "us-east-1"
-ami_id             = "ami-0c55b159cbfafe1f0"
-instance_type      = "t2.micro"
-key_name           = "my-keypair-prod"
-security_group_id  = "sg-0prod1234567890"
-subnet_id          = "subnet-0prod1234567890"
-env_tag            = "prod"
+provider "aws" {
+  region = "us-east-1"
+}
+
+module "ec2_instance" {
+  source = "../modules/ec2-instance"
+
+  ami_id             = "ami-0c55b159cbfafe1f0"
+  instance_type      = "t2.micro"
+  key_name           = "my-keypair-prod"
+  security_group_id  = "sg-0prod1234567890"
+  subnet_id          = "subnet-0prod1234567890"
+  env_tag            = "prod"
+  region             = "us-east-1"
+}
 ```
 
 ---
@@ -144,27 +172,27 @@ env_tag            = "prod"
 
 ```bash
 cd dev
-terraform init ../modules/ec2-instance
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars" -auto-approve
+terraform init
+terraform plan
+terraform apply -auto-approve
 ```
 
 ### 2️⃣ Initialize and Deploy QA Environment
 
 ```bash
 cd qa
-terraform init ../modules/ec2-instance
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars" -auto-approve
+terraform init
+terraform plan
+terraform apply -auto-approve
 ```
 
 ### 3️⃣ Initialize and Deploy Prod Environment
 
 ```bash
 cd prod
-terraform init ../modules/ec2-instance
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars" -auto-approve
+terraform init
+terraform plan
+terraform apply -auto-approve
 ```
 
 > Each folder now maintains its **own state file (`terraform.tfstate`)** automatically.
@@ -176,15 +204,15 @@ terraform apply -var-file="terraform.tfvars" -auto-approve
 ```bash
 # Dev
 cd dev
-terraform destroy -var-file="terraform.tfvars" -auto-approve
+terraform destroy -auto-approve
 
 # QA
 cd ../qa
-terraform destroy -var-file="terraform.tfvars" -auto-approve
+terraform destroy -auto-approve
 
 # Prod
 cd ../prod
-terraform destroy -var-file="terraform.tfvars" -auto-approve
+terraform destroy -auto-approve
 ```
 
 ---
